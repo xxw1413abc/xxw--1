@@ -109,29 +109,35 @@
                             console.log(err)
                         })
                 })
-
         // POST 请求示例----------promise
-        document.getElementById('postButton').addEventListener('click', function () {
-            const title = document.getElementById('titleInput').value || '默认标题';
-            const body = document.getElementById('bodyInput').value || '默认内容';
-            const postData = {
-                title: title,
-                body: body,
-                userId: 1
-            };
-            axios.post('https://jsonplaceholder.typicode.com/posts', postData).then(function (res) {
-                console.log(res, '222222222222')
-                const postResultDiv = document.getElementById('postResult');
-                postResultDiv.innerHTML = `<h3>提交成功!</h3>
-                <p><strong>相应状态<strong>: ${res.status}</p>
-                <p><strong>创建的记录id<strong>: ${res.data.id}</p>
-                <p><strong>标题<strong>: ${res.data.title}</p>
-                <p><strong>内容<strong>: ${res.data.body}</p>
-                `;
-            }).catch(function (err) {
-                console.log(err)
-            })
-        }
+        document.getElementById('asyncPostButton').addEventListener('click', async function () {
+    try {
+        const title = document.getElementById('asyncTitleInput').value || '默认标题';
+        const body = document.getElementById('asyncBodyInput').value || '默认内容';
+        const postData = {
+            title: title,
+            body: body,
+            userId: 1
+        };
+        const res = await axios.post('https://jsonplaceholder.typicode.com/posts', postData);
+        const asyncPostResultDiv = document.getElementById('asyncPostResult');
+        asyncPostResultDiv.innerHTML = `
+            <h3>提交成功!</h3>
+            <p><strong>相应状态</strong>: ${res.status}</p>
+            <p><strong>创建的记录id</strong>: ${res.data.id}</p>
+            <p><strong>标题</strong>: ${res.data.title}</p>
+            <p><strong>内容</strong>: ${res.data.body}</p>
+        `;
+    } catch (err) {
+        console.log(err);
+        const asyncPostResultDiv = document.getElementById('asyncPostResult');
+        asyncPostResultDiv.innerHTML = `<h3>提交失败!</h3><p>${err.message}</p>`;
+    }
+});
+
+
+
+
         // Async/Await GET 示例---------async/await
         document.getElementById('asyncFetchButton').addEventListener('click', async function () {
             try {
