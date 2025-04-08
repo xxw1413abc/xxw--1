@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原生轮播图</title>
+    <style>
+        .swiper {
+            width: 600px;
+            height: 300px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .swiper-wrapper {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+
+        .swiper-slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f1f1f1;
+        }
+
+        .swiper-slide img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+
+        .swiper-button-prev,
+        .swiper-button-next {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.7);
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            z-index: 10;
+        }
+
+        .swiper-button-prev {
+            left: 10px;
+        }
+
+        .swiper-button-next {
+            right: 10px;
+        }
+
+        .swiper-pagination {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            z-index: 10;
+        }
+
+        .swiper-pagination-bullet {
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border-radius: 50%;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+
+        .swiper-pagination-bullet.active {
+            background: #007aff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="swiper">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide"><img src="https://picsum.photos/600/300?random=1" alt="图片1"></div>
+            <div class="swiper-slide"><img src="https://picsum.photos/600/300?random=2" alt="图片2"></div>
+            <div class="swiper-slide"><img src="https://picsum.photos/600/300?random=3" alt="图片3"></div>
+        </div>
+        <button class="swiper-button-prev">❮</button>
+        <button class="swiper-button-next">❯</button>
+        <div class="swiper-pagination"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ===== 1. 初始化和元素获取 =====
+            // 获取页面上所有需要操作的元素
+            const swiper = document.querySelector('.swiper');            // 轮播图容器
+            const wrapper = document.querySelector('.swiper-wrapper');   // 轮播图内容包装器
+            const slides = document.querySelectorAll('.swiper-slide');   // 所有轮播图片(原始图片，不包括后面克隆的)
+            const prevButton = document.querySelector('.swiper-button-prev'); // 上一张按钮
+            const nextButton = document.querySelector('.swiper-button-next'); // 下一张按钮
+            const pagination = document.querySelector('.swiper-pagination');  // 分页指示器容器
+            
+            // ===== 2. 无缝循环设置 =====
+            // 克隆第一张和最后一张，用于实现无缝循环效果
+            // 原理：当滑到最后一张后显示第一张克隆，然后悄悄切回真正的第一张
+            const firstSlide = slides[0].cloneNode(true);                // 复制第一张图片
+            const lastSlide = slides[slides.length - 1].cloneNode(true); // 复制最后一张图片
+            
+            // 将复制的幻灯片添加到轮播中
+            wrapper.appendChild(firstSlide);  // 复制的第一张放到最后
+            wrapper.insertBefore(lastSlide, slides[0]); // 复制的最后一张放到最前
+            
+            // ===== 3. 状态变量 =====
+            let activeIndex = 0;        // 当前显示的图片索引(用户视角，0表示第一张真实图片)
+            let currentPosition = 1;    // 实际位置(包括克隆片，1表示第一张真实图片)
+            let isAnimating = false;    // 是否正在动画过渡中，防止快速点击导致动画错乱
+            
+            // ===== 4. 初始化轮播图 =====
+            function initSwiper() {
+                // 设置初始位置到第一张真实图片(索引为1，因为索引0是克隆的最后一张)
+                setPosition(1, false);  // false表示不需要动画效果
+                updatePagination();     // 更新底部小圆点状态
+                bindEvents();           // 绑定各种事件(点击、动画结束等)
+            }
+            
+            // ===== 5. 设置轮播图位置 =====
+            function setPosition(position, animate = true) {
+                currentPosition = position;  // 更新当前位置
+                
+                // 计算用户视角的活动索引(去除克隆片影响)
+                // 例如：position=1对应activeIndex=0(第一张真实图片)
+                activeIndex = (position - 1 + slides.length) % slides.length;
+                
+                // 设置是否有过渡动画
+                wrapper.style.transition = animate ? 'transform 0.5s ease' : 'none';
+                
+                // 移动轮播图到指定位置
+                // position * 100% 表示移动的距离，如position=1则移动100%宽度
+                wrapper.style.transform = `translateX(-${position * 100}%)`;
+                
+                // 更新底部小圆点状态
+                updatePagination();
+            }
+            
+            // ===== 6. 更新分页指示器 =====
+            function updatePagination() {
+                // 清空现有的指示器
+                pagination.innerHTML = '';
+                
+                // 为每张真实图片创建一个指示器小圆点
+                for (let i = 0; i < slides.length; i++) {
+                    const bullet = document.createElement('div');
+                    bullet.classList.add('swiper-pagination-bullet');
+                    
+                    // 当前显示的图片对应的小圆点高亮显示
+                    if (i === activeIndex) {
+                        bullet.classList.add('active');
+                    }
+                    
+                    // 为每个小圆点添加点击事件
+                    bullet.addEventListener('click', function() {
+                        if (!isAnimating) {  // 如果当前没有动画正在进行
+                            // 点击小圆点跳转到对应图片
+                            // i+1是因为真实图片的位置从1开始(位置0是克隆片)
+                            setPosition(i + 1);
+                        }
+                    });
+                    
+                    // 将小圆点添加到页面上
+                    pagination.appendChild(bullet);
+                }
+            }
+            
+            // ===== 7. 切换到下一张图片 =====
+            function slideNext() {
+                if (!isAnimating) {  // 如果当前没有动画正在进行
+                    isAnimating = true;  // 标记动画开始
+                    setPosition(currentPosition + 1);  // 移动到下一个位置
+                }
+            }
+            
+            // ===== 8. 切换到上一张图片 =====
+            function slidePrev() {
+                if (!isAnimating) {  // 如果当前没有动画正在进行
+                    isAnimating = true;  // 标记动画开始
+                    setPosition(currentPosition - 1);  // 移动到上一个位置
+                }
+            }
+            
+            // ===== 9. 绑定事件处理 =====
+            function bindEvents() {
+                // 监听过渡动画结束事件，处理无缝循环逻辑
+                wrapper.addEventListener('transitionend', function() {
+                    isAnimating = false;  // 标记动画结束
+                    
+                    // 无缝循环的核心逻辑：
+                    // 如果滑到了最后一个克隆片(第一张图片的克隆)
+                    if (currentPosition >= slides.length + 1) {
+                        // 立即无动画切换回第一张真实图片
+                        setPosition(1, false);
+                    }
+                    
+                    // 如果滑到了第一个克隆片(最后一张图片的克隆)
+                    if (currentPosition <= 0) {
+                        // 立即无动画切换回最后一张真实图片
+                        setPosition(slides.length, false);
+                    }
+                });
+                
+                // 下一张按钮点击事件
+                nextButton.addEventListener('click', slideNext);
+                
+                // 上一张按钮点击事件
+                prevButton.addEventListener('click', slidePrev);
+                
+                // 这里可以添加更多功能，如自动轮播、触摸滑动等
+            }
+            
+            // ===== 10. 启动轮播图 =====
+            initSwiper();  // 初始化并启动轮播图
+        });
+    </script>
+</body>
+
+</html> 
