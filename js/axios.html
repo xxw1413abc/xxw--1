@@ -110,66 +110,82 @@
     <!-- 引入Axios库 -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-        // GET 请求示例----------promise
-        document.getElementById('fetchButton').addEventListener('click', function () {
+        //防抖函数：多次执行，只执行最后一次
+        function debounce(func, delay) {
+            let timer;
+            return function () {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    func.apply(this, arguments);
+                }, delay);
+            }
+        }
+
+        //节流函数：限制函数在一定时间内只能执行一次
+        function throttle(func, delay) {
+            let lastTime = 0;
+            return function () {
+                const now = new Date().getTime();
+                if (now - lastTime > delay) {
+                    func.apply(this, arguments);
+                    lastTime = now;
+                }
+            }
+        }
+
+        document.getElementById('fetchButton').addEventListener('click', debounce(function () {
             axios.get('https://s5.360game.360.cn/to5/mini/v21/category.html').then(function (res) {
-                console.log(res.data.data, '111111111111111111111111111111111111111111');
+                console.log(res.data.data, '1111111111111111111111111111111111111111111111111');
                 const users = res.data.data;
                 const resultDiv = document.getElementById('result');
-                resultDiv.innerHTML = '<ul><h2>Users Found:</h2></ul>' + users.map(user =>
-                    `<li>${user.name}</li>`).join('');
+                resultDiv.innerHTML = '<h2>Users Found:</h2><ul>' + users.map(users => `<li>${users.name}</li>`).join('');
             })
                 .catch(function (err) {
-                    console.log(err)
-                })
-        })
-        // POST 请求示例----------promise
+                    console.log(err);
+                });
+        }, 1000))
 
-
-        document.getElementById('postButton').addEventListener('click', function () {
+        //POST 请求示例---------promise
+        document.getElementById('postButton').addEventListener('click', throttle(function () {
             const title = document.getElementById('titleInput').value || '默认标题';
             const body = document.getElementById('bodyInput').value || '默认内容';
+
             const postData = {
                 title: title,
                 body: body,
                 userId: 1
             };
+
             axios.post('https://jsonplaceholder.typicode.com/posts', postData).then(function (res) {
-                console.log(res, '222222222222')
+                console.log(res.data, '22222222222')
                 const postResultDiv = document.getElementById('postResult');
                 postResultDiv.innerHTML = `<h3>提交成功!</h3>
                 <p><strong>相应状态<strong>: ${res.status}</p>
-                <p><strong>创建的记录id<strong>: ${res.data.id}</p>
+                <p><strong>创建的数据<strong>: ${res.data.id}</p>
                 <p><strong>标题<strong>: ${res.data.title}</p>
-                <p><strong>内容<strong>: ${res.data.body}</p>
+                <p><strong>内容<strong>: ${res.data.body}</strong>
                 `;
             }).catch(function (err) {
-                console.log(err)
-            })
-        })
+                console.log(err);
+            });
+        }, 1000))
 
-
-
-
-        // Async/Await GET 示例---------async/await
-        document.getElementById('asyncFetchButton').addEventListener('click', async function () {
+        //Async/Await GET 请求示例---------async/await
+        document.getElementById('asyncFetchButton').addEventListener('click', debounce(async function () {
             try {
                 const res = await axios.get('https://s5.360game.360.cn/to5/mini/v21/category.html');
-                console.log(res, '89898989');
+                console.log(res, '89898898898989')
                 if (res.status === 200) {
                     const users = res.data.data;
                     const asyncGetResultDiv = document.getElementById('asyncGetResult');
-                    asyncGetResultDiv.innerHTML = '<h2>Users Found:</h2>' + users.map(user =>
-                        `<li>${user.name}</li>`
-                    ).join('');
+                    asyncGetResultDiv.innerHTML = '<h2>Users Found:</h2>' + users.map(users => `<li>${users.name}</li>`).join('');
                 }
             } catch (err) {
                 console.log(err);
             }
-        })
-
-        // Async/Await POST 示例---------async/await
-        document.getElementById('asyncPostButton').addEventListener('click', async function () {
+        }, 1000) )
+        //Async/Await POST 请求示例---------async/await
+        document.getElementById('asyncPostButton').addEventListener('click', throttle(async function () {
             try {
                 const title = document.getElementById('asyncTitleInput').value || '默认标题';
                 const body = document.getElementById('asyncBodyInput').value || '默认内容';
@@ -179,11 +195,17 @@
                     userId: 1
                 };
                 const res = await axios.post('https://jsonplaceholder.typicode.com/posts', postData);
+                const asyncPostResultDiv = document.getElementById('asyncPostResult');
+                asyncPostResultDiv.innerHTML = `<h3>提交成功!</h3>
+                <p><strong>相应状态<strong>: ${res.status}</p>
+                <p><strong>创建的记录<strong>: ${res.data.id}</p>
+                <p><strong>标题<strong>: ${res.data.title}</p>
+                <p><strong>内容<strong>: ${res.data.body}</strong>
+                `;
             } catch (err) {
                 console.log(err);
             }
-        });
-
+        }, 1000) )
 
     </script>
 </body>
